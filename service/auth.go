@@ -81,7 +81,7 @@ func Register(c *gin.Context, app *config.App) {
 		return
 	}
 
-	// Cek apakah email sudah terdaftar
+	// Check if email is already registered
 	var existingUser models.User
 	err := app.DB.Model(&existingUser).Where("email = ?", req.Email).Select()
 	if err == nil {
@@ -89,7 +89,7 @@ func Register(c *gin.Context, app *config.App) {
 		return
 	}
 
-	// Cek apakah email sudah ada di Redis (pending verification)
+	// Check if email already exists in Redis (pending verification)
 	ctx := context.Background()
 	pendingKey := fmt.Sprintf("pending_registration:%s", req.Email)
 	exists, err := app.Redis.Exists(ctx, pendingKey).Result()
@@ -111,7 +111,7 @@ func Register(c *gin.Context, app *config.App) {
 		return
 	}
 
-	// Simpan data user ke Redis dengan TTL 10 menit
+	// Save user data to Redis with 10 minute TTL
 	userID := uuid.New()
 	pendingUser := PendingUserData{
 		ID:           userID.String(),
@@ -128,7 +128,7 @@ func Register(c *gin.Context, app *config.App) {
 		return
 	}
 
-	// Simpan data dengan key: pending_registration:{email}
+	// Save data with key: pending_registration:{email}
 	err = app.Redis.Set(ctx, pendingKey, string(userDataJSON), 10*time.Minute).Err()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan data registrasi"})

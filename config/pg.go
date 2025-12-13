@@ -13,13 +13,13 @@ func NewPostgres() (*pg.DB) {
 	database := os.Getenv("PG_DATABASE")
 
 	db := pg.Connect(&pg.Options{
-		Addr:     addr, // contoh: "localhost:5432"
+		Addr:     addr, // example: "localhost:5432"
 		User:     user,
 		Password: password,
 		Database: database,
 	})
 	db.AddQueryHook(dbLogger{}) 
-	// Cek koneksi dengan query sederhana
+	// Check connection with simple query
 	_, err := db.Exec("SELECT 1")
 	if err != nil {
 		panic("Unable to connect to PostgreSQL" + err.Error())

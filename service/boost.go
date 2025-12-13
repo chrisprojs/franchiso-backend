@@ -56,7 +56,7 @@ func BoostFranchise(c *gin.Context, app *config.App) {
 		return
 	}
 
-	// Buat data Boost (is_active: false)
+	// Create Boost data (is_active: false)
 	packageDay, err := strconv.Atoi(req.Package)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("%s", err)})
@@ -155,7 +155,7 @@ func BoostPurchaseCallback(c *gin.Context, app *config.App) {
 		return
 	}
 
-	// Jika pembayaran sukses, aktifkan boost & franchise
+	// If payment is successful, activate boost & franchise
 	if notif.TransactionStatus == "settlement" || notif.TransactionStatus == "capture" {
 		_, err = app.DB.Model((*models.Boost)(nil)).
 			Set("is_active = ?", true).
@@ -167,7 +167,7 @@ func BoostPurchaseCallback(c *gin.Context, app *config.App) {
 			return
 		}
 
-		// Update franchise langsung tanpa select (hindari N+1)
+		// Update franchise directly without select (avoid N+1)
 		_, err = app.DB.Model((*models.Franchise)(nil)).
 			Set("is_boosted = ?", true).
 			Set("updated_at = ?", time.Now()).

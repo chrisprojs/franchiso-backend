@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 )
 
-// GenerateVerificationCode menghasilkan kode verifikasi 6 digit
+// GenerateVerificationCode generates a 6-digit verification code
 func GenerateVerificationCode() (string, error) {
 	bytes := make([]byte, 3)
 	if _, err := rand.Read(bytes); err != nil {

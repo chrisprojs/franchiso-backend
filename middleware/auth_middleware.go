@@ -13,7 +13,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Refactor: menerima next handler dan app
+// Refactor: accepts next handler and app
 func AuthMiddleware(app *config.App, next gin.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
@@ -32,7 +32,7 @@ func AuthMiddleware(app *config.App, next gin.HandlerFunc) gin.HandlerFunc {
 			return
 		}
 
-		// Jika error karena expired, cek refresh token
+		// If error is due to expiration, check refresh token
 		if !errors.Is(err, jwt.ErrTokenExpired) {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token tidak valid"})
 			return

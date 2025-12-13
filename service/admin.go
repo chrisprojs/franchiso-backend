@@ -14,7 +14,7 @@ type DisplayAllRequestForVerificationFranchiseResponse struct {
 	Franchises []models.Franchise `json:"franchises"`
 }
 
-// DisplayAllRequestForVerificationFranchise menampilkan seluruh franchise yang statusnya 'Menunggu Verifikasi'
+// DisplayAllRequestForVerificationFranchise displays all franchises with status 'Waiting for Verification'
 func DisplayAllRequestForVerificationFranchise(c *gin.Context, app *config.App) {
 	role := c.GetString("role")
 	if role != "Admin" {
@@ -76,7 +76,7 @@ func VerifyFranchise(c *gin.Context, app *config.App) {
 		return
 	}
 
-	// Jika terverifikasi, sinkron ke ES
+	// If verified, sync to ES
 	if req.Status == "Terverifikasi" {
 		var user models.User
 		if franchise.User != nil {
@@ -88,7 +88,7 @@ func VerifyFranchise(c *gin.Context, app *config.App) {
 			category = *franchise.Category
 		}
 
-		// Siapkan data sesuai mapping
+		// Prepare data according to mapping
 		doc := map[string]interface{}{
 			"id": franchise.ID.String(),
 			"user": map[string]interface{}{

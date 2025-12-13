@@ -15,7 +15,7 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-// Fungsi helper untuk upload file ke storage proxy
+// Helper function to upload file to storage proxy
 func UploadToStorageProxy(fileHeader *multipart.FileHeader) (string, error) {
 	file, err := fileHeader.Open()
 	if err != nil {
@@ -55,7 +55,7 @@ func UploadToStorageProxy(fileHeader *multipart.FileHeader) (string, error) {
 	return result.FileUrl, nil
 }
 
-// CropImageToSquare menerima file gambar dari multipart.FileHeader, meng-crop menjadi persegi, dan mengembalikan buffer hasil crop beserta format file ("jpeg"/"png").
+// CropImageToSquare receives an image file from multipart.FileHeader, crops it to a square, and returns the cropped buffer along with the file format ("jpeg"/"png").
 func CropImageToSquare(fileHeader *multipart.FileHeader) (*bytes.Buffer, string, error) {
 	file, err := fileHeader.Open()
 	if err != nil {
@@ -63,7 +63,7 @@ func CropImageToSquare(fileHeader *multipart.FileHeader) (*bytes.Buffer, string,
 	}
 	defer file.Close()
 
-	// Deteksi format file
+	// Detect file format
 	ext := strings.ToLower(fileHeader.Filename)
 	var img image.Image
 	var format string

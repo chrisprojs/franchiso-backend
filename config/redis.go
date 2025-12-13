@@ -18,7 +18,7 @@ func NewRedis() *redis.Client {
 
 	client := redis.NewClient(&redis.Options{
 		Addr:     redisAddr,
-		Password: os.Getenv("REDIS_PASSWORD"), // Jika ada password
+		Password: os.Getenv("REDIS_PASSWORD"), // If password exists
 		DB:       0,                           // Default DB
 	})
 

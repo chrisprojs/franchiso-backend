@@ -26,6 +26,52 @@ services:
       - redisdata:/data
     command: ["redis-server", "--appendonly", "yes"]
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
+      POSTGRES_DB: ${PG_DATABASE:-franchiso}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: franchiso-app
+    restart: always
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    volumes:
+      - ../uploads:/root/uploads
+      - ../.env:/root/.env
+    environment:
+      PG_ADDR: postgres:5432
+      PG_USER: ${PG_USER:-postgres}
+      PG_PASSWORD: ${PG_PASSWORD:-postgres}
+      PG_DATABASE: ${PG_DATABASE:-franchiso}
+      REDIS_ADDR: redis:6379
+      ELASTIC_URL: http://elasticsearch:9200
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
+
 volumes:
   esdata:
   redisdata:
+  postgresdata:

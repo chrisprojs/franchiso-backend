@@ -15,8 +15,8 @@ type EmailConfig struct {
 
 func NewEmailConfig() *EmailConfig {
 	return &EmailConfig{
-		SMTPHost:     "smtp.gmail.com", // Hardcode untuk Gmail
-		SMTPPort:     "587",            // Hardcode untuk Gmail (TLS)
+		SMTPHost:     "smtp.gmail.com", // Hardcoded for Gmail
+		SMTPPort:     "587",            // Hardcoded for Gmail (TLS)
 		SMTPUsername: os.Getenv("SMTP_ACC"),
 		SMTPPassword: os.Getenv("SMTP_ACC_PASSWORD"),
 		FromEmail:    getEnvWithDefault("SMTP_ACC", ""),

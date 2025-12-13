@@ -1,0 +1,13 @@
+vendor/
+__debug_bin*
+*.exe
+*.md
+.git/
+.gitignore
+franchiso/
+unboost_franchise/
+*.log
+.env
+.env.*
+!uploads/
+

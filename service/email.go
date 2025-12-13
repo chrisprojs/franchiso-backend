@@ -8,7 +8,7 @@ import (
 	"github.com/chrisprojs/Franchiso/config"
 )
 
-// SendVerificationEmail mengirim email verifikasi dengan kode
+// SendVerificationEmail sends verification email with code
 func SendVerificationEmail(emailConfig *config.EmailConfig, toEmail, toName, verificationCode string) error {
 	// Set up authentication
 	auth := smtp.PlainAuth("", emailConfig.SMTPUsername, emailConfig.SMTPPassword, emailConfig.SMTPHost)

@@ -331,7 +331,7 @@ func EditFranchise(c *gin.Context, app *config.App) {
 		columnsToUpdate = append(columnsToUpdate, "ad_photos")
 	}
 
-	// NPWP, NIB, SPTW hanya bisa diedit jika status Ditolak/Menunggu Verifikasi
+	// NPWP, NIB, SPTW can only be edited if status is Rejected/Waiting for Verification
 	if franchise.Status != "Terverifikasi" {
 		if req.Stpw != nil {
 			stpwUrl, err := utils.UploadToStorageProxy(req.Stpw)
@@ -434,7 +434,7 @@ func DisplayFranchiseDetailByID(c *gin.Context, app *config.App) {
 	showPrivate := c.DefaultQuery("showPrivate", "false")
 
 	if showPrivate == "true" {
-		// Ambil dari Postgres
+		// Get from Postgres
 		franchise := &models.Franchise{}
 		err := app.DB.Model(franchise).
 			Relation("User").
@@ -457,7 +457,7 @@ func DisplayFranchiseDetailByID(c *gin.Context, app *config.App) {
 		return
 	}
 
-	// Ambil dari Elasticsearch
+	// Get from Elasticsearch
 	res, err := app.ES.Get().
 		Index("franchises").
 		Id(franchiseID).
@@ -518,7 +518,7 @@ type SearchFranchiseRequest struct {
 	MinROI            *int
 	MaxROI            *int
 	MinBranchCount    *int
-	MaxBranchCount		*int
+	MaxBranchCount    *int
 	MinYearFounded    *int
 	MaxYearFounded    *int
 	Page              *int
@@ -531,10 +531,10 @@ type SearchFranchiseResponse struct {
 }
 
 func SearchingFranchise(c *gin.Context, app *config.App) {
-	// Bind request parameters dari query string
+	// Bind request parameters from query string
 	var req SearchFranchiseRequest
 
-	// Ambil parameter dari query string
+	// Get parameters from query string
 	if searchQuery := c.Query("searchQuery"); searchQuery != "" {
 		req.SearchQuery = searchQuery
 	}
@@ -597,7 +597,7 @@ func SearchingFranchise(c *gin.Context, app *config.App) {
 		}
 	}
 
-	// Set default values untuk page dan limit
+	// Set default values for page and limit
 	defaultPage := 1
 	defaultLimit := 10
 
@@ -621,11 +621,11 @@ func SearchingFranchise(c *gin.Context, app *config.App) {
 		req.Limit = &defaultLimit
 	}
 
-	// Debug: Cek apakah data franchise ada di ES
+	// Debug: Check if franchise data exists in ES
 	if req.SearchQuery != "" {
 		fmt.Printf("=== DEBUG: Mencari dengan query '%s' ===\n", req.SearchQuery)
 
-		// Cek semua franchise di ES
+		// Check all franchises in ES
 		allRes, err := app.ES.Search().
 			Index("franchises").
 			Size(100).
@@ -641,19 +641,27 @@ func SearchingFranchise(c *gin.Context, app *config.App) {
 		}
 	}
 
-	// Bangun query ES
+	// Build ES query
 	boolQuery := elastic.NewBoolQuery()
 
 	// Filter by search query (fulltext)
 	if req.SearchQuery != "" {
-		// Gunakan match_phrase_prefix untuk pencarian yang mengabaikan case dan mencari prefix
+		// Use combined query for flexible search
 		searchQuery := elastic.NewBoolQuery()
 
-		// Query untuk brand dengan case-insensitive
-		brandQuery := elastic.NewMatchPhrasePrefixQuery("brand", req.SearchQuery)
-		brandQuery.Analyzer("standard") // Menggunakan standard analyzer yang case-insensitive
+		// Query for brand: wildcard to search for substring in the middle of text (case-insensitive)
+		// Example: "urg" will find "Burger King"
+		brandWildcardQuery := elastic.NewWildcardQuery("brand", "*"+req.SearchQuery+"*")
+		brandWildcardQuery.CaseInsensitive(true)
 
-		searchQuery.Should(brandQuery)
+		// Alternative query: match query for search with token analysis (better for complete words)
+		brandMatchQuery := elastic.NewMatchQuery("brand", req.SearchQuery)
+		brandMatchQuery.Operator("or")
+		brandMatchQuery.Fuzziness("AUTO")
+
+		// Combination: one of the above queries must match
+		searchQuery.Should(brandWildcardQuery)
+		searchQuery.Should(brandMatchQuery)
 		searchQuery.MinimumShouldMatch("1")
 		boolQuery.Must(searchQuery)
 	}
@@ -734,12 +742,12 @@ func SearchingFranchise(c *gin.Context, app *config.App) {
 	from := (*req.Page - 1) * *req.Limit
 	searchService = searchService.From(from).Size(*req.Limit)
 
-	// Debug: Print query untuk troubleshooting
+	// Debug: Print query for troubleshooting
 	if req.SearchQuery != "" {
 		fmt.Printf("Search Query: %s\n", req.SearchQuery)
 	}
 
-	// Eksekusi
+	// Execute
 	res, err := searchService.Do(context.Background())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mencari franchise"})
@@ -749,12 +757,12 @@ func SearchingFranchise(c *gin.Context, app *config.App) {
 	// Debug: Print total hits
 	fmt.Printf("Total hits: %d\n", res.Hits.TotalHits.Value)
 
-	// Ambil hasil
+	// Get results
 	franchises := []models.FranchiseES{}
 	for _, hit := range res.Hits.Hits {
 		var f models.FranchiseES
 		if err := json.Unmarshal(hit.Source, &f); err == nil {
-			// Debug: Print score untuk debugging
+			// Debug: Print score for debugging
 			if req.SearchQuery != "" && hit.Score != nil {
 				fmt.Printf("Franchise: %s, Score: %f\n", f.Brand, *hit.Score)
 			}
@@ -762,7 +770,7 @@ func SearchingFranchise(c *gin.Context, app *config.App) {
 		}
 	}
 
-	// Buat response
+	// Create response
 	response := SearchFranchiseResponse{
 		Total:      res.Hits.TotalHits.Value,
 		Franchises: franchises,
@@ -776,7 +784,7 @@ type CategoryResponse struct {
 }
 
 func CategoryList(c *gin.Context, app *config.App) {
-	// Ambil semua kategori dari database
+	// Get all categories from database
 	var categories []models.Category
 	err := app.DB.Model(&categories).Select()
 	if err != nil {
@@ -797,8 +805,8 @@ func CategoryList(c *gin.Context, app *config.App) {
 	c.JSON(http.StatusOK, response)
 }
 
-// DeleteFranchise menghapus data franchise dari Postgres, dan jika statusnya
-// "Terverifikasi" maka juga menghapus dokumennya dari Elasticsearch.
+// DeleteFranchise deletes franchise data from Postgres, and if the status
+// is "Verified" then also deletes its document from Elasticsearch.
 func DeleteFranchise(c *gin.Context, app *config.App) {
 	franchiseID := c.Param("id")
 
@@ -814,7 +822,7 @@ func DeleteFranchise(c *gin.Context, app *config.App) {
 		return
 	}
 
-	// Ambil franchise untuk verifikasi kepemilikan dan cek status
+	// Get franchise to verify ownership and check status
 	franchise := &models.Franchise{}
 	err := app.DB.Model(franchise).
 		Where("id = ?", franchiseID).
@@ -825,7 +833,7 @@ func DeleteFranchise(c *gin.Context, app *config.App) {
 		return
 	}
 
-	// Jika terverifikasi, hapus dari Elasticsearch terlebih dahulu
+	// If verified, delete from Elasticsearch first
 	if franchise.Status == "Terverifikasi" {
 		_, err := app.ES.Delete().
 			Index("franchises").
@@ -834,7 +842,7 @@ func DeleteFranchise(c *gin.Context, app *config.App) {
 			Do(context.Background())
 		if err != nil {
 			if esErr, ok := err.(*elastic.Error); ok && esErr.Status == http.StatusNotFound {
-				// Abaikan jika dokumen tidak ditemukan di ES
+				// Ignore if document not found in ES
 			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus franchise dari Elasticsearch"})
 				return
@@ -842,7 +850,7 @@ func DeleteFranchise(c *gin.Context, app *config.App) {
 		}
 	}
 
-	// Hapus dari Postgres
+	// Delete from Postgres
 	_, err = app.DB.Model((*models.Franchise)(nil)).
 		Where("id = ?", franchiseID).
 		Where("user_id = ?", userID).
